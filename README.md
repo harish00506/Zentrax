@@ -1,6 +1,23 @@
 # Zentrax — Voice & Gesture Desktop Controller
 
-Lightweight voice and gesture control for desktop interactions. This repository provides a hybrid recognizer (Whisper + Google fallback), gesture detection (MediaPipe), and optional integrations (WhatsApp, a small Hill Climb demo). The code is designed to run on machines without all optional dependencies by providing safe fallbacks.
+Lightweight voice and gesture control for desktop interactions with a **stunning futuristic web UI**. This repository provides a hybrid recognizer (Whisper + Google fallback), gesture detection (MediaPipe), and optional integrations (WhatsApp, a small Hill Climb demo). The code is designed to run on machines without all optional dependencies by providing safe fallbacks.
+
+## 🎨 New: Beautiful Web Interface
+
+Control Zentrax through a gorgeous, futuristic web interface featuring:
+- ✨ Animated gradient backgrounds
+- 🎯 Real-time status indicators
+- 🎮 One-click mode switching (Voice/Gesture/Game)
+- 📊 Live activity log
+- ⌨️ Keyboard shortcuts
+- 📱 Responsive design
+
+**Quick start UI:**
+```powershell
+.\start_ui.ps1
+```
+
+See [frontend/README.md](frontend/README.md) for detailed UI documentation.
 
 ## Quick start (Windows PowerShell)
 

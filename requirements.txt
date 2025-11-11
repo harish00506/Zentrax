@@ -17,3 +17,7 @@ pywhatkit
 
 # Utilities
 numpy
+
+# Web UI
+websockets
+pygame
