@@ -53,6 +53,15 @@ except Exception:
 			except Exception:
 				return ""
 
+# --- Windows Automation Integration ---
+try:
+    from windows_command_generator import WindowsCommandGenerator
+    from command_executor import CommandExecutor
+    WINDOWS_AUTOMATION_AVAILABLE = True
+except Exception as e:
+    print(f"[Warning] Windows automation not available: {e}")
+    WINDOWS_AUTOMATION_AVAILABLE = False
+
 
 class VoiceGestureControl:
     def __init__(self, use_whisper=True, whisper_model="base"):
@@ -85,6 +94,15 @@ class VoiceGestureControl:
         # audio queue for non-blocking transcription
         self.audio_queue = Queue()
         self.audio_worker = threading.Thread(target=self._audio_worker, daemon=True)
+
+        # --- Windows Automation (SmolLM2/Pattern Matching) ---
+        if WINDOWS_AUTOMATION_AVAILABLE:
+            self.win_command_generator = WindowsCommandGenerator(use_fallback=True)
+            self.win_executor = CommandExecutor()
+            print("✅ Windows Automation enabled (voice commands → system actions)")
+        else:
+            self.win_command_generator = None
+            self.win_executor = None
 
         # Voice commands
         self.voice_commands = {
@@ -260,10 +278,36 @@ class VoiceGestureControl:
             elif text.startswith("send whatsapp message to"):
                 self.handle_whatsapp(text)
                 return
+            
+            # Check predefined voice commands first
+            command_found = False
             for command, func in self.voice_commands.items():
                 if command in text:
                     func()
+                    command_found = True
                     break
+            
+            # If no predefined command matched, try Windows Automation
+            if not command_found and self.win_command_generator and self.win_executor:
+                self._execute_windows_command(text)
+
+    def _execute_windows_command(self, text):
+        """Use Windows automation to execute natural language commands."""
+        try:
+            # Generate command from natural language
+            command = self.win_command_generator.generate_command(text)
+            
+            if command:
+                # Execute the command
+                success, message = self.win_executor.execute(command)
+                if success:
+                    print(f"✅ {message}")
+                else:
+                    print(f"❌ {message}")
+            else:
+                print(f"🤷 Could not understand: {text}")
+        except Exception as e:
+            print(f"❌ Windows automation error: {e}")
 
     # ---------------- WhatsApp ----------------
     def handle_whatsapp(self, text):

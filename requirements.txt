@@ -17,7 +17,11 @@ pywhatkit
 
 # Utilities
 numpy
+requests
 
 # Web UI
 websockets
 pygame
+
+# Windows Automation (optional)
+# pywin32  # For advanced window management
