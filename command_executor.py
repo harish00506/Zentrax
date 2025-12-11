@@ -126,6 +126,32 @@ class CommandExecutor:
             "sleep": self._sleep,
             "system_info": self._system_info,
             "web_search": self._web_search,
+            # Advanced FRIDAY controls
+            "brightness_up": self._brightness_up,
+            "brightness_down": self._brightness_down,
+            "set_brightness": self._set_brightness,
+            "wifi_toggle": self._wifi_toggle,
+            "bluetooth_toggle": self._bluetooth_toggle,
+            "kill_process": self._kill_process,
+            "list_processes": self._list_processes,
+            "media_play_pause": self._media_play_pause,
+            "media_next": self._media_next,
+            "media_previous": self._media_previous,
+            "media_stop": self._media_stop,
+            "open_url": self._open_url,
+            "new_tab": self._new_tab,
+            "close_tab": self._close_tab,
+            "refresh_page": self._refresh_page,
+            "empty_recycle_bin": self._empty_recycle_bin,
+            "show_desktop": self._show_desktop,
+            "open_emoji_picker": self._open_emoji_picker,
+            "open_clipboard_history": self._open_clipboard_history,
+            "night_light_toggle": self._night_light_toggle,
+            "airplane_mode_toggle": self._airplane_mode_toggle,
+            "type_text": self._type_text,
+            "voice_typing": self._voice_typing,
+            "scroll": self._scroll,
+            "click": self._click,
         }
         
         handler = handlers.get(action)
@@ -763,6 +789,340 @@ class CommandExecutor:
         # Fallback to default browser
         os.startfile(search_url)
         return True, f"Searching for '{query}' in default browser"
+    
+    # ============ ADVANCED FRIDAY CONTROLS ============
+    
+    def _brightness_up(self, cmd: Dict) -> Tuple[bool, str]:
+        """Increase screen brightness."""
+        extra = cmd.get("extra", {})
+        amount = extra.get("amount", 10) if isinstance(extra, dict) else 10
+        try:
+            subprocess.run(
+                ["powershell", "-Command",
+                 f"(Get-WmiObject -Namespace root/WMI -Class WmiMonitorBrightnessMethods).WmiSetBrightness(1, "
+                 f"[Math]::Min(100, (Get-WmiObject -Namespace root/WMI -Class WmiMonitorBrightness).CurrentBrightness + {amount}))"],
+                capture_output=True, timeout=5
+            )
+            return True, f"Brightness increased by {amount}%"
+        except Exception as e:
+            # Fallback using keyboard shortcut (Fn+brightness keys not available)
+            return False, f"Could not adjust brightness: {e}"
+    
+    def _brightness_down(self, cmd: Dict) -> Tuple[bool, str]:
+        """Decrease screen brightness."""
+        extra = cmd.get("extra", {})
+        amount = extra.get("amount", 10) if isinstance(extra, dict) else 10
+        try:
+            subprocess.run(
+                ["powershell", "-Command",
+                 f"(Get-WmiObject -Namespace root/WMI -Class WmiMonitorBrightnessMethods).WmiSetBrightness(1, "
+                 f"[Math]::Max(0, (Get-WmiObject -Namespace root/WMI -Class WmiMonitorBrightness).CurrentBrightness - {amount}))"],
+                capture_output=True, timeout=5
+            )
+            return True, f"Brightness decreased by {amount}%"
+        except Exception as e:
+            return False, f"Could not adjust brightness: {e}"
+    
+    def _set_brightness(self, cmd: Dict) -> Tuple[bool, str]:
+        """Set screen brightness to specific level."""
+        extra = cmd.get("extra", {})
+        level = extra.get("level", 50) if isinstance(extra, dict) else 50
+        level = max(0, min(100, level))
+        try:
+            subprocess.run(
+                ["powershell", "-Command",
+                 f"(Get-WmiObject -Namespace root/WMI -Class WmiMonitorBrightnessMethods).WmiSetBrightness(1, {level})"],
+                capture_output=True, timeout=5
+            )
+            return True, f"Brightness set to {level}%"
+        except Exception as e:
+            return False, f"Could not set brightness: {e}"
+    
+    def _wifi_toggle(self, cmd: Dict) -> Tuple[bool, str]:
+        """Toggle WiFi on/off."""
+        extra = cmd.get("extra", {})
+        state = extra.get("state", "toggle") if isinstance(extra, dict) else "toggle"
+        
+        try:
+            if state == "on":
+                subprocess.run(["netsh", "interface", "set", "interface", "Wi-Fi", "enabled"], 
+                             capture_output=True, timeout=5)
+                return True, "WiFi enabled"
+            elif state == "off":
+                subprocess.run(["netsh", "interface", "set", "interface", "Wi-Fi", "disabled"],
+                             capture_output=True, timeout=5)
+                return True, "WiFi disabled"
+            else:
+                # Toggle - check current state first
+                result = subprocess.run(["netsh", "interface", "show", "interface", "Wi-Fi"],
+                                       capture_output=True, text=True, timeout=5)
+                if "Enabled" in result.stdout:
+                    subprocess.run(["netsh", "interface", "set", "interface", "Wi-Fi", "disabled"],
+                                 capture_output=True, timeout=5)
+                    return True, "WiFi disabled"
+                else:
+                    subprocess.run(["netsh", "interface", "set", "interface", "Wi-Fi", "enabled"],
+                                 capture_output=True, timeout=5)
+                    return True, "WiFi enabled"
+        except Exception as e:
+            return False, f"Could not toggle WiFi: {e}"
+    
+    def _bluetooth_toggle(self, cmd: Dict) -> Tuple[bool, str]:
+        """Toggle Bluetooth on/off."""
+        extra = cmd.get("extra", {})
+        state = extra.get("state", "toggle") if isinstance(extra, dict) else "toggle"
+        
+        try:
+            # Open Bluetooth settings (direct toggle requires complex WinRT APIs)
+            subprocess.Popen("start ms-settings:bluetooth", shell=True)
+            return True, "Opened Bluetooth settings. Toggle Bluetooth from there."
+        except Exception as e:
+            return False, f"Could not open Bluetooth settings: {e}"
+    
+    def _kill_process(self, cmd: Dict) -> Tuple[bool, str]:
+        """Kill a process by name."""
+        target = cmd.get("target", "")
+        if not target:
+            return False, "No process name specified"
+        
+        # Add .exe if not present
+        if not target.lower().endswith(".exe"):
+            target += ".exe"
+        
+        try:
+            result = subprocess.run(["taskkill", "/IM", target, "/F"],
+                                   capture_output=True, text=True, timeout=5)
+            if result.returncode == 0:
+                return True, f"Process {target} terminated"
+            else:
+                return False, f"Could not kill {target}: {result.stderr}"
+        except Exception as e:
+            return False, f"Error killing process: {e}"
+    
+    def _list_processes(self, cmd: Dict) -> Tuple[bool, str]:
+        """List running processes."""
+        extra = cmd.get("extra", {})
+        top_n = extra.get("count", 10) if isinstance(extra, dict) else 10
+        
+        try:
+            result = subprocess.run(
+                ["powershell", "-Command",
+                 f"Get-Process | Sort-Object WorkingSet64 -Descending | "
+                 f"Select-Object -First {top_n} Name,@{{Name='MemMB';Expression={{[math]::Round($_.WorkingSet64/1MB,0)}}}} | "
+                 "Format-Table -AutoSize"],
+                capture_output=True, text=True, timeout=10
+            )
+            processes = result.stdout.strip()
+            print(f"\n📊 Top {top_n} Running Processes:\n{processes}")
+            return True, f"Listed top {top_n} processes"
+        except Exception as e:
+            return False, f"Error listing processes: {e}"
+    
+    def _media_play_pause(self, cmd: Dict) -> Tuple[bool, str]:
+        """Play/Pause media."""
+        if PYAUTOGUI_AVAILABLE:
+            pyautogui.press('playpause')
+            return True, "Media play/pause toggled"
+        else:
+            # Use virtual key code
+            try:
+                import ctypes
+                ctypes.windll.user32.keybd_event(0xB3, 0, 0, 0)  # VK_MEDIA_PLAY_PAUSE
+                ctypes.windll.user32.keybd_event(0xB3, 0, 2, 0)  # Key up
+                return True, "Media play/pause toggled"
+            except Exception:
+                return False, "Could not toggle media"
+    
+    def _media_next(self, cmd: Dict) -> Tuple[bool, str]:
+        """Next media track."""
+        if PYAUTOGUI_AVAILABLE:
+            pyautogui.press('nexttrack')
+            return True, "Skipped to next track"
+        else:
+            try:
+                import ctypes
+                ctypes.windll.user32.keybd_event(0xB0, 0, 0, 0)  # VK_MEDIA_NEXT_TRACK
+                ctypes.windll.user32.keybd_event(0xB0, 0, 2, 0)
+                return True, "Skipped to next track"
+            except Exception:
+                return False, "Could not skip track"
+    
+    def _media_previous(self, cmd: Dict) -> Tuple[bool, str]:
+        """Previous media track."""
+        if PYAUTOGUI_AVAILABLE:
+            pyautogui.press('prevtrack')
+            return True, "Skipped to previous track"
+        else:
+            try:
+                import ctypes
+                ctypes.windll.user32.keybd_event(0xB1, 0, 0, 0)  # VK_MEDIA_PREV_TRACK
+                ctypes.windll.user32.keybd_event(0xB1, 0, 2, 0)
+                return True, "Skipped to previous track"
+            except Exception:
+                return False, "Could not skip track"
+    
+    def _media_stop(self, cmd: Dict) -> Tuple[bool, str]:
+        """Stop media playback."""
+        if PYAUTOGUI_AVAILABLE:
+            pyautogui.press('stop')
+            return True, "Media stopped"
+        else:
+            try:
+                import ctypes
+                ctypes.windll.user32.keybd_event(0xB2, 0, 0, 0)  # VK_MEDIA_STOP
+                ctypes.windll.user32.keybd_event(0xB2, 0, 2, 0)
+                return True, "Media stopped"
+            except Exception:
+                return False, "Could not stop media"
+    
+    def _open_url(self, cmd: Dict) -> Tuple[bool, str]:
+        """Open a specific URL in browser."""
+        target = cmd.get("target", "")
+        extra = cmd.get("extra", {})
+        url = extra.get("url", target) if isinstance(extra, dict) else target
+        
+        if not url:
+            return False, "No URL specified"
+        
+        # Add https:// if no protocol specified
+        if not url.startswith(("http://", "https://")):
+            url = "https://" + url
+        
+        try:
+            os.startfile(url)
+            return True, f"Opened {url}"
+        except Exception as e:
+            return False, f"Could not open URL: {e}"
+    
+    def _new_tab(self, cmd: Dict) -> Tuple[bool, str]:
+        """Open new browser tab."""
+        if PYAUTOGUI_AVAILABLE:
+            pyautogui.hotkey('ctrl', 't')
+            return True, "Opened new tab"
+        return False, "PyAutoGUI not available"
+    
+    def _close_tab(self, cmd: Dict) -> Tuple[bool, str]:
+        """Close current browser tab."""
+        if PYAUTOGUI_AVAILABLE:
+            pyautogui.hotkey('ctrl', 'w')
+            return True, "Closed current tab"
+        return False, "PyAutoGUI not available"
+    
+    def _refresh_page(self, cmd: Dict) -> Tuple[bool, str]:
+        """Refresh current page."""
+        if PYAUTOGUI_AVAILABLE:
+            pyautogui.press('f5')
+            return True, "Page refreshed"
+        return False, "PyAutoGUI not available"
+    
+    def _empty_recycle_bin(self, cmd: Dict) -> Tuple[bool, str]:
+        """Empty the recycle bin."""
+        try:
+            import ctypes
+            # SHEmptyRecycleBin with no confirmation dialog
+            ctypes.windll.shell32.SHEmptyRecycleBinW(None, None, 0x07)
+            return True, "Recycle bin emptied"
+        except Exception as e:
+            return False, f"Could not empty recycle bin: {e}"
+    
+    def _show_desktop(self, cmd: Dict) -> Tuple[bool, str]:
+        """Show desktop (minimize all windows)."""
+        if PYAUTOGUI_AVAILABLE:
+            pyautogui.hotkey('win', 'd')
+            return True, "Showing desktop"
+        else:
+            try:
+                import ctypes
+                ctypes.windll.user32.keybd_event(0x5B, 0, 0, 0)  # Win key down
+                ctypes.windll.user32.keybd_event(0x44, 0, 0, 0)  # D key down
+                ctypes.windll.user32.keybd_event(0x44, 0, 2, 0)  # D key up
+                ctypes.windll.user32.keybd_event(0x5B, 0, 2, 0)  # Win key up
+                return True, "Showing desktop"
+            except Exception:
+                return False, "Could not show desktop"
+    
+    def _open_emoji_picker(self, cmd: Dict) -> Tuple[bool, str]:
+        """Open Windows emoji picker."""
+        if PYAUTOGUI_AVAILABLE:
+            pyautogui.hotkey('win', '.')
+            return True, "Opened emoji picker"
+        return False, "PyAutoGUI not available"
+    
+    def _open_clipboard_history(self, cmd: Dict) -> Tuple[bool, str]:
+        """Open clipboard history."""
+        if PYAUTOGUI_AVAILABLE:
+            pyautogui.hotkey('win', 'v')
+            return True, "Opened clipboard history"
+        return False, "PyAutoGUI not available"
+    
+    def _night_light_toggle(self, cmd: Dict) -> Tuple[bool, str]:
+        """Toggle night light / blue light filter."""
+        try:
+            subprocess.Popen("start ms-settings:nightlight", shell=True)
+            return True, "Opened Night Light settings"
+        except Exception as e:
+            return False, f"Could not open Night Light settings: {e}"
+    
+    def _airplane_mode_toggle(self, cmd: Dict) -> Tuple[bool, str]:
+        """Toggle airplane mode."""
+        try:
+            subprocess.Popen("start ms-settings:network-airplanemode", shell=True)
+            return True, "Opened Airplane Mode settings"
+        except Exception as e:
+            return False, f"Could not open Airplane Mode settings: {e}"
+    
+    def _type_text(self, cmd: Dict) -> Tuple[bool, str]:
+        """Type text using keyboard."""
+        extra = cmd.get("extra", {})
+        text = extra.get("text", "") if isinstance(extra, dict) else ""
+        
+        if not text:
+            text = cmd.get("target", "")
+        
+        if not text:
+            return False, "No text to type"
+        
+        if PYAUTOGUI_AVAILABLE:
+            pyautogui.write(text, interval=0.02)
+            return True, f"Typed: {text[:50]}..."
+        return False, "PyAutoGUI not available"
+    
+    def _scroll(self, cmd: Dict) -> Tuple[bool, str]:
+        """Scroll the page."""
+        extra = cmd.get("extra", {})
+        direction = extra.get("direction", "down") if isinstance(extra, dict) else "down"
+        amount = extra.get("amount", 3) if isinstance(extra, dict) else 3
+        
+        if PYAUTOGUI_AVAILABLE:
+            if direction == "up":
+                pyautogui.scroll(amount)
+            else:
+                pyautogui.scroll(-amount)
+            return True, f"Scrolled {direction}"
+        return False, "PyAutoGUI not available"
+    
+    def _click(self, cmd: Dict) -> Tuple[bool, str]:
+        """Perform mouse click."""
+        extra = cmd.get("extra", {})
+        button = extra.get("button", "left") if isinstance(extra, dict) else "left"
+        clicks = extra.get("clicks", 1) if isinstance(extra, dict) else 1
+        x = extra.get("x") if isinstance(extra, dict) else None
+        y = extra.get("y") if isinstance(extra, dict) else None
+        
+        if PYAUTOGUI_AVAILABLE:
+            if x is not None and y is not None:
+                pyautogui.click(x=x, y=y, button=button, clicks=clicks)
+            else:
+                pyautogui.click(button=button, clicks=clicks)
+            return True, f"{button.capitalize()} click performed"
+        return False, "PyAutoGUI not available"
+    
+    def _voice_typing(self, cmd: Dict) -> Tuple[bool, str]:
+        """Activate Windows Voice Typing (Win+H)."""
+        if PYAUTOGUI_AVAILABLE:
+            pyautogui.hotkey('win', 'h')
+            return True, "Voice typing activated. Speak now!"
+        return False, "PyAutoGUI not available"
 
 
 # Convenience function

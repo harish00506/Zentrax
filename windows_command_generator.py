@@ -296,6 +296,155 @@ class PatternMatcher:
         if "task manager" in text or "taskmgr" in text:
             return {"action": "open_app", "target": "taskmgr.exe"}
         
+        # ============ ADVANCED FRIDAY COMMANDS ============
+        
+        # Brightness control
+        if re.search(r'(increase|raise|turn up|brighter).*(brightness|screen)', text) or re.search(r'brightness.*(up|increase)', text):
+            return {"action": "brightness_up", "extra": {"amount": 15}}
+        if re.search(r'(decrease|lower|turn down|dimmer).*(brightness|screen)', text) or re.search(r'brightness.*(down|decrease)', text):
+            return {"action": "brightness_down", "extra": {"amount": 15}}
+        if re.search(r'(set|make).*(brightness|screen).*(\d+)', text):
+            match = re.search(r'(\d+)', text)
+            level = int(match.group(1)) if match else 50
+            return {"action": "set_brightness", "extra": {"level": level}}
+        
+        # WiFi control
+        if re.search(r'(turn|switch).*(on|enable).*(wifi|wi-fi|wireless|internet)', text) or re.search(r'(enable|connect).*(wifi|wi-fi|wireless)', text):
+            return {"action": "wifi_toggle", "extra": {"state": "on"}}
+        if re.search(r'(turn|switch).*(off|disable).*(wifi|wi-fi|wireless|internet)', text) or re.search(r'(disable|disconnect).*(wifi|wi-fi|wireless)', text):
+            return {"action": "wifi_toggle", "extra": {"state": "off"}}
+        if re.search(r'toggle.*(wifi|wi-fi|wireless)', text):
+            return {"action": "wifi_toggle", "extra": {"state": "toggle"}}
+        
+        # Bluetooth control
+        if re.search(r'(open|turn|toggle|enable|disable).*(bluetooth)', text):
+            return {"action": "bluetooth_toggle"}
+        
+        # Kill/close process
+        kill_match = re.search(r'(kill|terminate|end|stop|force\s*close)\s+(?:the\s+)?(?:process\s+)?(\w+)', text)
+        if kill_match:
+            process = kill_match.group(2)
+            return {"action": "kill_process", "target": process}
+        
+        # List processes
+        if re.search(r'(list|show|what).*(running|process|apps|programs)', text) or re.search(r'running\s+(apps|process)', text):
+            return {"action": "list_processes", "extra": {"count": 10}}
+        
+        # Media controls
+        if re.search(r'(play|pause|resume|toggle).*(music|media|song|track|video)?', text) and not re.search(r'play\s+\w+', text):
+            return {"action": "media_play_pause"}
+        if re.search(r'(next|skip).*(song|track|music)?', text):
+            return {"action": "media_next"}
+        if re.search(r'(previous|prev|back|last).*(song|track|music)?', text):
+            return {"action": "media_previous"}
+        if re.search(r'stop.*(music|media|playing)', text):
+            return {"action": "media_stop"}
+        
+        # Open URL
+        url_match = re.search(r'(open|go to|visit|navigate to)\s+((?:https?://)?(?:www\.)?[\w.-]+\.[a-z]{2,}(?:/\S*)?)', text)
+        if url_match:
+            url = url_match.group(2)
+            return {"action": "open_url", "target": url}
+        
+        # Common websites
+        if re.search(r'(open|go to)\s+(youtube|github|gmail|google|facebook|twitter|instagram|linkedin|reddit)', text):
+            site = re.search(r'(youtube|github|gmail|google|facebook|twitter|instagram|linkedin|reddit)', text).group(1)
+            urls = {
+                "youtube": "youtube.com", "github": "github.com", "gmail": "gmail.com",
+                "google": "google.com", "facebook": "facebook.com", "twitter": "twitter.com",
+                "instagram": "instagram.com", "linkedin": "linkedin.com", "reddit": "reddit.com"
+            }
+            return {"action": "open_url", "target": urls.get(site, f"{site}.com")}
+        
+        # Tab controls
+        if re.search(r'(new|open)\s*tab', text):
+            return {"action": "new_tab"}
+        if re.search(r'close\s*tab', text):
+            return {"action": "close_tab"}
+        if re.search(r'(refresh|reload)\s*(?:page|tab)?', text):
+            return {"action": "refresh_page"}
+        
+        # Show desktop
+        if re.search(r'show\s*desktop|minimize\s*all|go to desktop', text):
+            return {"action": "show_desktop"}
+        
+        # Empty recycle bin
+        if re.search(r'empty.*(recycle|trash|bin)', text) or re.search(r'(clear|clean).*(recycle|trash)', text):
+            return {"action": "empty_recycle_bin"}
+        
+        # Emoji picker
+        if re.search(r'(open|show).*(emoji|emoticon)', text):
+            return {"action": "open_emoji_picker"}
+        
+        # Clipboard history
+        if re.search(r'(open|show).*(clipboard|paste\s*history)', text):
+            return {"action": "open_clipboard_history"}
+        
+        # Night light / blue light filter
+        if re.search(r'(night\s*light|blue\s*light|night\s*mode|eye\s*comfort)', text):
+            return {"action": "night_light_toggle"}
+        
+        # Airplane mode
+        if re.search(r'airplane\s*mode|flight\s*mode', text):
+            return {"action": "airplane_mode_toggle"}
+        
+        # Scroll commands
+        if re.search(r'scroll\s*(up|down)', text):
+            direction = "up" if "up" in text else "down"
+            return {"action": "scroll", "extra": {"direction": direction, "amount": 5}}
+        
+        # CPU/Memory/Disk info
+        if re.search(r'(cpu|processor).*(usage|info|status)', text):
+            return {"action": "system_info", "extra": {"type": "cpu"}}
+        if re.search(r'(ram|memory).*(usage|info|status)', text):
+            return {"action": "system_info", "extra": {"type": "memory"}}
+        if re.search(r'(disk|storage|space).*(usage|info|status|left|available)', text):
+            return {"action": "system_info", "extra": {"type": "disk"}}
+        if re.search(r'(wifi|network|internet).*(status|info|connected)', text):
+            return {"action": "system_info", "extra": {"type": "network"}}
+        
+        # General status check
+        if re.search(r'(system|computer|pc).*(status|info|health)', text) or text in ["status", "system info", "how am i doing"]:
+            return {"action": "system_info", "extra": {"type": "all"}}
+        
+        # Help command
+        if text in ["help", "what can you do", "commands", "help me"]:
+            return {"action": "help"}
+        
+        # Thank you response (for FRIDAY personality)
+        if re.search(r'(thank|thanks|thank you)', text):
+            return {"action": "thanks"}
+        
+        # Who are you?
+        if re.search(r'(who are you|what is your name|introduce yourself)', text):
+            return {"action": "introduce"}
+        
+        # ============ TYPE TEXT / VOICE TYPING ============
+        # "type hello world" / "write hello world" / "type in notepad: hello"
+        type_match = re.search(r'(?:type|write|input|enter)\s+(?:in\s+(?:notepad|file)\s*[:\.\-]?\s*)?["\']?(.+?)["\']?$', text)
+        if type_match:
+            text_to_type = type_match.group(1).strip()
+            if text_to_type and len(text_to_type) > 1:
+                return {"action": "type_text", "extra": {"text": text_to_type}}
+        
+        # "voice typing" / "activate voice typing" / "start dictation"
+        if re.search(r'(voice\s*typing|dictation|dictate|start\s*typing|voice\s*input)', text):
+            return {"action": "voice_typing"}
+        
+        # ============ WEB RESEARCH ============
+        # "research about python" / "search the web for AI" / "look up machine learning"
+        research_match = re.search(r'(?:research|search\s+(?:the\s+)?(?:web|internet)\s+(?:for|about)?|look\s+up|find\s+(?:info|information)\s+(?:about|on))\s+(.+)', text)
+        if research_match:
+            query = research_match.group(1).strip()
+            return {"action": "web_search", "target": query}
+        
+        # "what is X" / "tell me about X" - treat as web search
+        what_is_match = re.search(r'(?:what\s+is|tell\s+me\s+about|explain|define)\s+(.+)', text)
+        if what_is_match:
+            query = what_is_match.group(1).strip()
+            if len(query) > 2 and query not in ["the time", "time", "date", "battery"]:
+                return {"action": "web_search", "target": query}
+        
         return None
 
 
