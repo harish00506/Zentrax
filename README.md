@@ -153,30 +153,48 @@ pip install torch --index-url https://download.pytorch.org/whl/cu118
 
 ## 🚀 Quick Start
 
-### Option 1: Command Line
+### 🎯 One Command to Run Everything
 
 ```powershell
-# Activate virtual environment
+# Activate virtual environment (first time only)
 .\.venv\Scripts\Activate.ps1
 
-# Run Zentrax
-python main.py
+# Run Zentrax (starts backend + UI + opens browser)
+python run.py
 ```
 
-### Option 2: Web UI
+Or simply double-click `Zentrax.bat`!
+
+### Command Options
 
 ```powershell
-# Start the web interface
-.\start_ui.ps1
+# Full command with all options
+python run.py                    # Start with UI and browser
+python run.py --headless         # Run without camera window
+python run.py --no-browser       # Don't auto-open browser
+python run.py --port 3000        # Use custom frontend port
+
+# PowerShell with parameters
+.\Zentrax.ps1 -Headless -Port 3000
 ```
 
-Then open http://localhost:8765 in your browser.
+### What Gets Started
 
-### Option 3: Windows Automation Only (Testing)
+| Component | Description | URL |
+|-----------|-------------|-----|
+| 🤖 **Backend** | Voice & gesture recognition | Terminal |
+| 🌐 **Frontend** | Modern dashboard UI | http://localhost:8080 |
+| 🔌 **WebSocket** | UI ↔ Backend communication | ws://localhost:8765 |
+
+### Alternative: Run Components Separately
 
 ```powershell
-# Test the Windows automation module directly
-python windows_automation.py
+# Backend only
+python main.py --headless
+
+# Frontend only (in separate terminal)
+cd frontend
+python -m http.server 8080
 ```
 
 ---
