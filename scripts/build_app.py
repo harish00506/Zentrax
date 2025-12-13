@@ -1,11 +1,16 @@
 """
 Zentrax Application Builder
 Converts the Python project into a standalone Windows executable.
+Run this from the project root: python scripts/build_app.py
 """
 
 import subprocess
 import sys
 import os
+
+# Ensure we're in the project root
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+os.chdir(PROJECT_ROOT)
 
 def install_pyinstaller():
     """Install PyInstaller if not available."""
@@ -32,6 +37,7 @@ def build_exe():
         "--icon=zentrax.ico",  # Icon file (if exists)
         "--add-data=training_data;training_data",  # Include training data
         "--add-data=frontend;frontend",  # Include frontend files
+        "--add-data=src;src",  # Include source modules
         "--hidden-import=pyttsx3.drivers",
         "--hidden-import=pyttsx3.drivers.sapi5",
         "--hidden-import=speech_recognition",

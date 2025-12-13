@@ -22,7 +22,7 @@ except Exception:
 # --- Safe imports / fallbacks for missing modules ---
 try:
 	# try to import real implementations if present
-	from hill_climb_game import HillClimbGame
+	from src.core.hill_climb_game import HillClimbGame
 except Exception:
 	# Minimal stub so main program can run without the actual game module
 	class HillClimbGame:
@@ -37,7 +37,7 @@ except Exception:
 			print(f"[HillClimbGame stub] Gesture received: {gesture}")
 
 try:
-	from whisper_handler import HybridRecognizer
+	from src.assistant.whisper_handler import HybridRecognizer
 except Exception:
 	# Fallback HybridRecognizer using speech_recognition's Google API
 	class HybridRecognizer:
@@ -55,8 +55,8 @@ except Exception:
 
 # --- Windows Automation Integration ---
 try:
-    from windows_command_generator import WindowsCommandGenerator
-    from command_executor import CommandExecutor
+    from src.commands.windows_command_generator import WindowsCommandGenerator
+    from src.commands.command_executor import CommandExecutor
     WINDOWS_AUTOMATION_AVAILABLE = True
 except Exception as e:
     print(f"[Warning] Windows automation not available: {e}")
@@ -64,7 +64,7 @@ except Exception as e:
 
 # --- FRIDAY AI Assistant ---
 try:
-    from friday_assistant import FridayAssistant, SystemMonitor
+    from src.assistant.friday_assistant import FridayAssistant, SystemMonitor
     FRIDAY_AVAILABLE = True
 except Exception as e:
     print(f"[Warning] FRIDAY assistant not available: {e}")

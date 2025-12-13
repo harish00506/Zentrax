@@ -462,22 +462,53 @@ pip install mediapipe
 
 ```
 Zentrax/
-├── main.py                      # Main entry point - voice/gesture control
-├── windows_command_generator.py # AI command generation (SmolLM2/Pattern matching)
-├── command_executor.py          # Executes Windows commands
-├── windows_automation.py        # Standalone CLI for testing
-├── whisper_handler.py           # Whisper speech recognition
-├── websocket_server.py          # WebSocket server for Web UI
-├── requirements.txt             # Python dependencies
-├── setup_ollama.ps1             # Ollama installation script
-├── start_ui.ps1                 # Start web interface script
-├── frontend/                    # Web UI files
+├── main.py                       # Main entry point - voice/gesture control
+├── requirements.txt              # Python dependencies
+├── README.md                     # This file
+│
+├── src/                          # Source code modules
+│   ├── assistant/                # AI Assistant
+│   │   ├── friday_assistant.py   # Voice responses & personality
+│   │   └── whisper_handler.py    # Whisper speech recognition
+│   │
+│   ├── commands/                 # Command processing
+│   │   ├── command_executor.py   # Executes Windows commands
+│   │   ├── windows_command_generator.py  # AI command generation
+│   │   └── windows_automation.py # Standalone CLI testing
+│   │
+│   └── core/                     # Core utilities
+│       ├── data_collection.py    # Training data collection
+│       ├── hill_climb_game.py    # Game integration
+│       ├── train_models.py       # Model training
+│       └── websocket_server.py   # WebSocket server
+│
+├── frontend/                     # Web UI files
 │   ├── index.html
 │   ├── style.css
 │   └── script.js
-└── training_data/               # Training data for gestures/voice
-    ├── gestures/
-    └── voice_commands/
+│
+├── scripts/                      # Setup & build scripts
+│   ├── build.bat                 # Build Windows executable
+│   ├── build_app.py              # Python build script
+│   ├── setup_ollama_docker.bat   # Docker Ollama setup
+│   └── start_ui.bat              # Start web interface
+│
+├── docker/                       # Docker configuration
+│   ├── docker-compose.yml        # Docker Compose for Ollama
+│   └── Dockerfile.ollama         # Ollama container image
+│
+├── config/                       # Configuration files
+│   ├── zentrax.spec              # PyInstaller config
+│   └── installer.iss             # Inno Setup installer
+│
+├── docs/                         # Documentation
+│   ├── OLLAMA_DOCKER.md          # Docker setup guide
+│   ├── WHISPER_SETUP.md          # Whisper setup guide
+│   └── WINDOWS_AUTOMATION.md     # Automation guide
+│
+└── training_data/                # Training data
+    ├── gestures/                 # Gesture samples
+    └── voice_commands/           # Voice command samples
 ```
 
 ---
